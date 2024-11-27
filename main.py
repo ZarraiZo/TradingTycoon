@@ -1,8 +1,8 @@
-import pygame
+ï»¿import pygame
 
 pygame.init()
 
-# Fenstergröße und Anzeige
+# FenstergrÃ¶ÃŸe und Anzeige
 fenster_width = 1800
 fenster_height = 1000
 fenster = pygame.display.set_mode((fenster_width, fenster_height))
@@ -30,7 +30,7 @@ button_width = 250
 
 start_rect = pygame.Rect(center_x - button_width // 2, center_y, button_width, button_height)
 
-# Funktion für abgerundete Buttons
+# Funktion fÃ¼r abgerundete Buttons
 def draw_rounded_button(surface, x, y, width, height, border_radius, border_color, center_color, border_thickness=2):
     pygame.draw.rect(surface, border_color, (x, y, width, height), border_radius=border_radius)
     pygame.draw.rect(surface, center_color,
@@ -67,7 +67,7 @@ while spielstatus:
             spielstatus = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if start_rect.collidepoint(mouse_pos):
-                print("Spiel gestartet!")  # Hier könnte der Übergang in das Spiel erfolgen.
+                print("Spiel gestartet!")  # Hier kÃ¶nnte der Ãœbergang in das Spiel erfolgen.
 
     pygame.display.update()
 
