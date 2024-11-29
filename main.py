@@ -42,6 +42,8 @@ def draw_rounded_button(surface, x, y, width, height, border_radius, border_colo
 background_image = pygame.image.load("Hintergrund/Bild1.jpg").convert()
 background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
+angemeldeter_user = None
+
 spielstatus = True
 
 while spielstatus:
@@ -50,6 +52,10 @@ while spielstatus:
     mouse_pos = pygame.mouse.get_pos()
 
     fenster.blit(title_text, title_rect)
+
+    if angemeldeter_user:
+        user_text = small_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
+        fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
 
     for button in buttons:
         rect = button["rect"]
@@ -69,7 +75,8 @@ while spielstatus:
             for button in buttons:
                 if button["rect"].collidepoint(mouse_pos):
                     if button["label"] == "Anmelden":
-                        zeigeAnmelden(fenster_width, fenster_height)
+                        angemeldeter_user = zeigeAnmelden(fenster_width, fenster_height)
+                        print(f"Angemeldeter Benutzer: {angemeldeter_user}")
                     elif button["label"] == "Beenden":
                         spielstatus = False
 

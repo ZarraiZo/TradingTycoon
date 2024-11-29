@@ -1,7 +1,8 @@
 Fehlerliste - Was noch dazu kommen soll		Version: v00.02
 ----------------------------------------------------------------------------------------------------------------------------------
 
-+	User sind in der Datenbank
-	+ Muss es nur noch in Anmelden einpflegen mit dem User erstellen.
+-	Problem mit dem User
+	+ Anmelden klappt
+	- Sobald man angemeldet ist und von main.py in anmelden.py geht und auf schließen drückt ändert er den User wieder in None
 
 ----------------------------------------------------------------------------------------------------------------------------------

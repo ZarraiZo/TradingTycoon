@@ -1,9 +1,11 @@
 ﻿import pygame
+from tkinter import simpledialog
+import sqlite3
 
-def zeigeAnmelden(fenster_width, fenster_height):
+def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
     pygame.init()
     fenster = pygame.display.set_mode((fenster_width, fenster_height))
-    pygame.display.set_caption("Anmelden - Trading Tycoon")
+    pygame.display.set_caption("Trading Tycoon")
 
     black = (0, 0, 0)
     green = (0, 255, 0)
@@ -28,16 +30,32 @@ def zeigeAnmelden(fenster_width, fenster_height):
         {"label": "Schließen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
     ]
 
-    background_image = pygame.image.load("Hintergrund/Bild2.jpg").convert()
-    background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
-
     def draw_rounded_button(surface, x, y, width, height, border_radius, border_color, center_color, border_thickness=2):
         pygame.draw.rect(surface, border_color, (x, y, width, height), border_radius=border_radius)
         pygame.draw.rect(surface, center_color,
                          (x + border_thickness, y + border_thickness, width - 2 * border_thickness, height - 2 * border_thickness),
                          border_radius=border_radius)
 
+    background_image = pygame.image.load("Hintergrund/Bild2.jpg").convert()
+    background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
+
+    def authenticate_user():
+        username = simpledialog.askstring("Anmelden", "Benutzername:")
+        password = simpledialog.askstring("Anmelden", "Passwort:", show='*')
+        
+        conn = sqlite3.connect('datenbank.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM user WHERE username=? AND password=?", (username, password))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            return username
+        else:
+            return None
+
     spielstatus = True
+    angemeldeter_user = current_user
 
     while spielstatus:
         fenster.fill(black)
@@ -45,6 +63,10 @@ def zeigeAnmelden(fenster_width, fenster_height):
         mouse_pos = pygame.mouse.get_pos()
 
         fenster.blit(title_text, title_rect)
+
+        if angemeldeter_user:
+            user_text = small_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
+            fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
 
         for button in buttons:
             rect = button["rect"]
@@ -63,9 +85,13 @@ def zeigeAnmelden(fenster_width, fenster_height):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button["rect"].collidepoint(mouse_pos):
-                        if button["label"] == "Schließen":
-                            return
+                        if button["label"] == "Anmelden":
+                            angemeldeter_user = authenticate_user()
+                            if angemeldeter_user:
+                                return angemeldeter_user
+                        elif button["label"] == "Schließen":
+                            return angemeldeter_user
 
         pygame.display.update()
 
-    pygame.quit()
+    return angemeldeter_user
