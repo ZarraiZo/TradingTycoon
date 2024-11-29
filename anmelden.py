@@ -17,6 +17,8 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
     font = pygame.font.Font(None, 74)
     small_font = pygame.font.Font(None, 50)
 
+    status_font = pygame.font.Font(None, 30)
+
     title_text = font.render("Trading Tycoon", True, green)
     center_x = fenster_width // 2
     center_y = fenster_height // 2
@@ -76,7 +78,10 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
 
         angemeldeter_user = login.get_active_user()
         if angemeldeter_user:
-            user_text = small_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
+            user_text = status_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
+            fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
+        else:
+            user_text = status_font.render("Kein Benutzer angemeldet", True, red)
             fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
 
         for button in buttons:

@@ -53,11 +53,13 @@ while spielstatus:
     fenster.blit(title_text, title_rect)
 
     angemeldeter_user = login.get_active_user()
+    status_font = pygame.font.Font(None, 30)
+
     if angemeldeter_user:
-        user_text = small_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
+        user_text = status_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
         fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
     else:
-        user_text = small_font.render("Kein Benutzer angemeldet", True, red)
+        user_text = status_font.render("Kein Benutzer angemeldet", True, red)
         fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
 
     for button in buttons:
