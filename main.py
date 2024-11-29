@@ -1,5 +1,6 @@
 ﻿import pygame
 from anmelden import zeigeAnmelden
+from markt import zeigeMarkt
 import login
 
 pygame.init()
@@ -81,6 +82,8 @@ while spielstatus:
                 if button["rect"].collidepoint(mouse_pos):
                     if button["label"] == "Anmelden":
                         zeigeAnmelden(fenster_width, fenster_height)
+                    elif button["label"] == "Markt":
+                        zeigeMarkt(fenster_width, fenster_height, current_user=login.get_active_user())
                     elif button["label"] == "Beenden":
                         spielstatus = False
 

@@ -3,10 +3,10 @@ from tkinter import simpledialog, messagebox
 import sqlite3
 import login
 
-def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
+def zeigeMarkt(fenster_width, fenster_height, current_user=None):
     pygame.init()
     fenster = pygame.display.set_mode((fenster_width, fenster_height))
-    pygame.display.set_caption("Trading Tycoon")
+    pygame.display.set_caption("Trading Tycoon - Markt")
 
     black = (0, 0, 0)
     green = (0, 255, 0)
@@ -19,7 +19,7 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
 
     status_font = pygame.font.Font(None, 30)
 
-    title_text = font.render("Trading Tycoon", True, green)
+    title_text = font.render("Markt", True, green)
     center_x = fenster_width // 2
     center_y = fenster_height // 2
     title_rect = title_text.get_rect(center=(center_x, center_y - 450))
@@ -28,9 +28,9 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
     button_width = 450
 
     buttons = [
-        {"label": "Anmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y - 100, button_width, button_height)},
-        {"label": "Neuen Spieler erstellen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 20, button_width, button_height)},
-        {"label": "Abmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
+        {"label": "Aktien kaufen", "rect": pygame.Rect(center_x - button_width // 2, center_y - 100, button_width, button_height)},
+        {"label": "Aktien verkaufen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 20, button_width, button_height)},
+        {"label": "Depot ansehen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
         {"label": "Schließen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 260, button_width, button_height)},
     ]
 
@@ -40,7 +40,7 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
                          (x + border_thickness, y + border_thickness, width - 2 * border_thickness, height - 2 * border_thickness),
                          border_radius=border_radius)
 
-    background_image = pygame.image.load("Hintergrund/Bild3.jpg").convert()
+    background_image = pygame.image.load("Hintergrund/Bild2.jpg").convert()
     background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
     def authenticate_user():
@@ -66,6 +66,15 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
             messagebox.showinfo("Abmeldung", "Benutzer wurde erfolgreich abgemeldet.")
         else:
             messagebox.showinfo("Abmeldung", "Kein Benutzer ist aktuell angemeldet.")
+
+    def aktien_kaufen():
+        messagebox.showinfo("Aktien kaufen", "Funktion zum Aktienkauf wird hier eingebaut.")
+
+    def aktien_verkaufen():
+        messagebox.showinfo("Aktien verkaufen", "Funktion zum Aktienverkauf wird hier eingebaut.")
+
+    def depot_ansehen():
+        messagebox.showinfo("Depot ansehen", "Funktion zum Ansehen des Depots wird hier eingebaut.")
 
     spielstatus = True
 
@@ -101,10 +110,12 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button["rect"].collidepoint(mouse_pos):
-                        if button["label"] == "Anmelden":
-                            authenticate_user()
-                        elif button["label"] == "Abmelden":
-                            abmelden_user()
+                        if button["label"] == "Aktien kaufen":
+                            aktien_kaufen()
+                        elif button["label"] == "Aktien verkaufen":
+                            aktien_verkaufen()
+                        elif button["label"] == "Depot ansehen":
+                            depot_ansehen()
                         elif button["label"] == "Schließen":
                             return None
 
