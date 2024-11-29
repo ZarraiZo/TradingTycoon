@@ -1,8 +1,9 @@
-Fehlerliste - Was noch dazu kommen soll		Version: v00.02
+Fehlerliste - Was noch dazu kommen soll		Version: v00.03
 ----------------------------------------------------------------------------------------------------------------------------------
 
--	Problem mit dem User
-	+ Anmelden klappt
-	- Sobald man angemeldet ist und von main.py in anmelden.py geht und auf schließen drückt ändert er den User wieder in None
++	Anmelden funktioniert jetzt
+	+ Müssen noch die Schriftgröße anpassen
+
+-	Markt muss eingefügt werden
 
 ----------------------------------------------------------------------------------------------------------------------------------

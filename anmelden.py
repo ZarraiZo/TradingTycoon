@@ -1,6 +1,7 @@
 ﻿import pygame
-from tkinter import simpledialog
+from tkinter import simpledialog, messagebox
 import sqlite3
+import login
 
 def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
     pygame.init()
@@ -27,7 +28,8 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
     buttons = [
         {"label": "Anmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y - 100, button_width, button_height)},
         {"label": "Neuen Spieler erstellen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 20, button_width, button_height)},
-        {"label": "Schließen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
+        {"label": "Abmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
+        {"label": "Schließen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 260, button_width, button_height)},
     ]
 
     def draw_rounded_button(surface, x, y, width, height, border_radius, border_color, center_color, border_thickness=2):
@@ -50,12 +52,20 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
         conn.close()
 
         if user:
+            login.set_active_user(username)
             return username
         else:
+            messagebox.showerror("Fehler", "Ungültiger Benutzername oder Passwort.")
             return None
 
+    def abmelden_user():
+        if login.get_active_user():
+            login.clear_active_user()
+            messagebox.showinfo("Abmeldung", "Benutzer wurde erfolgreich abgemeldet.")
+        else:
+            messagebox.showinfo("Abmeldung", "Kein Benutzer ist aktuell angemeldet.")
+
     spielstatus = True
-    angemeldeter_user = current_user
 
     while spielstatus:
         fenster.fill(black)
@@ -64,6 +74,7 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
 
         fenster.blit(title_text, title_rect)
 
+        angemeldeter_user = login.get_active_user()
         if angemeldeter_user:
             user_text = small_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
             fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
@@ -86,12 +97,10 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
                 for button in buttons:
                     if button["rect"].collidepoint(mouse_pos):
                         if button["label"] == "Anmelden":
-                            angemeldeter_user = authenticate_user()
-                            if angemeldeter_user:
-                                return angemeldeter_user
+                            authenticate_user()
+                        elif button["label"] == "Abmelden":
+                            abmelden_user()
                         elif button["label"] == "Schließen":
-                            return angemeldeter_user
+                            return None
 
         pygame.display.update()
-
-    return angemeldeter_user
