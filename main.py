@@ -1,4 +1,5 @@
 ﻿import pygame
+import sqlite3
 from anmelden import zeigeAnmelden
 from markt import zeigeMarkt
 import login
@@ -18,6 +19,7 @@ red = (255, 0, 0)
 
 font = pygame.font.Font(None, 74)
 small_font = pygame.font.Font(None, 50)
+status_font = pygame.font.Font(None, 25)
 
 title_text = font.render("Trading Tycoon", True, green)
 center_x = fenster_width // 2
@@ -44,6 +46,22 @@ def draw_rounded_button(surface, x, y, width, height, border_radius, border_colo
 background_image = pygame.image.load("Hintergrund/Bild1.jpg").convert()
 background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
+def get_user_data(username):
+    """
+    Holt die Benutzerinformationen (Geld und Depotwert) aus der Datenbank.
+    """
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT geld, depotwert FROM user WHERE username = ?", (username,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return {"geld": result[0], "depotwert": result[1]}
+    else:
+        return {"geld": 0.0, "depotwert": 0.0}
+
 spielstatus = True
 
 while spielstatus:
@@ -54,14 +72,19 @@ while spielstatus:
     fenster.blit(title_text, title_rect)
 
     angemeldeter_user = login.get_active_user()
-    status_font = pygame.font.Font(None, 30)
-
     if angemeldeter_user:
+        benutzer_daten = get_user_data(angemeldeter_user)
+
         user_text = status_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
-        fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
+        geld_text = status_font.render(f"Geld: {benutzer_daten['geld']}€", True, green)
+        depot_text = status_font.render(f"Depotwert: {benutzer_daten['depotwert']}€", True, green)
+
+        fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 400))
+        fenster.blit(geld_text, (center_x - geld_text.get_width() // 2, center_y - 375))
+        fenster.blit(depot_text, (center_x - depot_text.get_width() // 2, center_y - 350))
     else:
         user_text = status_font.render("Kein Benutzer angemeldet", True, red)
-        fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
+        fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 400))
 
     for button in buttons:
         rect = button["rect"]

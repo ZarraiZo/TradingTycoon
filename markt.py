@@ -16,8 +16,7 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
 
     font = pygame.font.Font(None, 74)
     small_font = pygame.font.Font(None, 50)
-
-    status_font = pygame.font.Font(None, 30)
+    status_font = pygame.font.Font(None, 25)  # Kleinere Schriftgröße
 
     title_text = font.render("Markt", True, green)
     center_x = fenster_width // 2
@@ -42,6 +41,24 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
 
     background_image = pygame.image.load("Hintergrund/Bild2.jpg").convert()
     background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
+
+    def get_user_data(username):
+        """
+        Holt die Benutzerinformationen (Geld und Depotwert) aus der Datenbank.
+        """
+        conn = sqlite3.connect("datenbank.db")
+        cursor = conn.cursor()
+
+        # Abfrage: Geld und Depotwert des Benutzers abrufen
+        cursor.execute("SELECT geld, depotwert FROM user WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        conn.close()
+
+        # Rückgabe: Geld und Depotwert, falls Benutzer gefunden wird
+        if result:
+            return {"geld": result[0], "depotwert": result[1]}
+        else:
+            return {"geld": 0.0, "depotwert": 0.0}  # Standardwerte, falls nichts gefunden wurde
 
     def authenticate_user():
         username = simpledialog.askstring("Anmelden", "Benutzername:")
@@ -87,11 +104,22 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
 
         angemeldeter_user = login.get_active_user()
         if angemeldeter_user:
+            # Hole Benutzerinformationen aus der Datenbank
+            benutzer_daten = get_user_data(angemeldeter_user)
+
+            # Anzeige von Benutzerinformationen
             user_text = status_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
-            fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
+            geld_text = status_font.render(f"Geld: {benutzer_daten['geld']}€", True, green)
+            depot_text = status_font.render(f"Depotwert: {benutzer_daten['depotwert']}€", True, green)
+
+            # Positionierung der Texte
+            fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 400))
+            fenster.blit(geld_text, (center_x - geld_text.get_width() // 2, center_y - 375))
+            fenster.blit(depot_text, (center_x - depot_text.get_width() // 2, center_y - 350))
         else:
+            # Keine Benutzeranmeldung
             user_text = status_font.render("Kein Benutzer angemeldet", True, red)
-            fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 350))
+            fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 400))
 
         for button in buttons:
             rect = button["rect"]
