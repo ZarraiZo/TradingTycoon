@@ -2,6 +2,7 @@
 import sqlite3
 from anmelden import zeigeAnmelden
 from markt import zeigeMarkt
+from zeit import zeigeZeit
 import login
 
 pygame.init()
@@ -30,11 +31,12 @@ button_height = 80
 button_width = 250
 
 buttons = [
-    {"label": "Anmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y - 100, button_width, button_height)},
-    {"label": "Markt", "rect": pygame.Rect(center_x - button_width // 2, center_y + 20, button_width, button_height)},
-    {"label": "Depot", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
-    {"label": "Bestenliste", "rect": pygame.Rect(center_x - button_width // 2, center_y + 260, button_width, button_height)},
-    {"label": "Beenden", "rect": pygame.Rect(center_x - button_width // 2, center_y + 380, button_width, button_height)},
+    {"label": "Anmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y - 200, button_width, button_height)},
+    {"label": "Markt", "rect": pygame.Rect(center_x - button_width // 2, center_y - 80, button_width, button_height)},
+    {"label": "Depot", "rect": pygame.Rect(center_x - button_width // 2, center_y + 40, button_width, button_height)},
+    {"label": "Bestenliste", "rect": pygame.Rect(center_x - button_width // 2, center_y + 160, button_width, button_height)},
+    {"label": "Zeit", "rect": pygame.Rect(center_x - button_width // 2, center_y + 280, button_width, button_height)},
+    {"label": "Beenden", "rect": pygame.Rect(center_x - button_width // 2, center_y + 400, button_width, button_height)},
 ]
 
 def draw_rounded_button(surface, x, y, width, height, border_radius, border_color, center_color, border_thickness=2):
@@ -47,9 +49,6 @@ background_image = pygame.image.load("Hintergrund/Bild1.jpg").convert()
 background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
 def get_user_data(username):
-    """
-    Holt die Benutzerinformationen (Geld und Depotwert) aus der Datenbank.
-    """
     conn = sqlite3.connect("datenbank.db")
     cursor = conn.cursor()
 
@@ -107,6 +106,8 @@ while spielstatus:
                         zeigeAnmelden(fenster_width, fenster_height)
                     elif button["label"] == "Markt":
                         zeigeMarkt(fenster_width, fenster_height, current_user=login.get_active_user())
+                    elif button["label"] == "Zeit":
+                        zeigeZeit(fenster_width, fenster_height)
                     elif button["label"] == "Beenden":
                         spielstatus = False
 
