@@ -7,8 +7,9 @@ Fehlerliste - Was noch dazu kommen soll		Version: v00.07
 +	Bestenliste hinzugefügt
 	+ Tabelle ist eingefügt
 		- Das Sortieren nach Geldsumme muss noch eingefügt werden.
-		- Die Zeit unten rechts fehlt noch
+		- Die Zeit unten rechts fehlt noch.
 		- User wird nicht oben angezeigt muss auch wieder eingefügt werden.
+		- Tabelle muss auch noch weiter angepasst werden.
 
 -	anmelden.py
 	- Hier geht Neuer Spieler erstellen nicht mehr muss ich mir nochmal angucken.
