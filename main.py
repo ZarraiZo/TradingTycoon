@@ -1,5 +1,6 @@
 ﻿import pygame
 import sqlite3
+from datetime import datetime
 from anmelden import zeigeAnmelden
 from markt import zeigeMarkt
 from zeit import zeigeZeit
@@ -21,6 +22,7 @@ red = (255, 0, 0)
 font = pygame.font.Font(None, 74)
 small_font = pygame.font.Font(None, 50)
 status_font = pygame.font.Font(None, 25)
+small_time_font = pygame.font.Font(None, 20)
 
 title_text = font.render("Trading Tycoon", True, green)
 center_x = fenster_width // 2
@@ -61,6 +63,20 @@ def get_user_data(username):
     else:
         return {"geld": 0.0, "depotwert": 0.0}
 
+def get_time_from_db():
+    """Liest die Zeit aus der Tabelle 'zeit' in der Datenbank."""
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT datum, uhrzeit FROM zeit LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        datum, uhrzeit = result
+        return f"{datum} {uhrzeit}"
+    else:
+        return "01.01.2025 01:00"
+
 spielstatus = True
 
 while spielstatus:
@@ -84,6 +100,11 @@ while spielstatus:
     else:
         user_text = status_font.render("Kein Benutzer angemeldet", True, red)
         fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 400))
+
+    db_time = get_time_from_db()
+    bottom_right_text = small_time_font.render(db_time, True, green)
+    bottom_right_pos = (fenster_width - bottom_right_text.get_width() - 10, fenster_height - bottom_right_text.get_height() - 10)
+    fenster.blit(bottom_right_text, bottom_right_pos)
 
     for button in buttons:
         rect = button["rect"]
