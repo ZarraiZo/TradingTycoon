@@ -1,6 +1,7 @@
 ﻿import pygame
 from tkinter import simpledialog, messagebox
 import sqlite3
+from datetime import datetime
 import login
 
 def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
@@ -44,9 +45,7 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
     background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
     def get_user_data(username):
-        """
-        Holt die Benutzerinformationen (Geld und Depotwert) aus der Datenbank.
-        """
+        """Holt die Benutzerinformationen (Geld und Depotwert) aus der Datenbank."""
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
 
@@ -74,6 +73,7 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
             return "01.01.2025 01:00"
 
     def authenticate_user():
+        """Authentifiziert den Benutzer durch Eingabe von Benutzername und Passwort."""
         username = simpledialog.askstring("Anmelden", "Benutzername:")
         password = simpledialog.askstring("Anmelden", "Passwort:", show='*')
         
@@ -91,11 +91,45 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
             return None
 
     def abmelden_user():
+        """Loggt den Benutzer aus."""
         if login.get_active_user():
             login.clear_active_user()
             messagebox.showinfo("Abmeldung", "Benutzer wurde erfolgreich abgemeldet.")
         else:
             messagebox.showinfo("Abmeldung", "Kein Benutzer ist aktuell angemeldet.")
+
+    def neuer_spieler_erstellen():
+        """Erstellt einen neuen Spieler und fügt ihn in die Datenbank ein."""
+        username = simpledialog.askstring("Neuen Spieler erstellen", "Benutzername:")
+        if not username:
+            messagebox.showerror("Fehler", "Der Benutzername darf nicht leer sein.")
+            return
+
+        password = simpledialog.askstring("Neuen Spieler erstellen", "Passwort:", show='*')
+        if not password:
+            messagebox.showerror("Fehler", "Das Passwort darf nicht leer sein.")
+            return
+
+        geburtsjahr = simpledialog.askinteger("Neuen Spieler erstellen", "Geburtsjahr:")
+        if not geburtsjahr or geburtsjahr < 1900 or geburtsjahr > datetime.now().year:
+            messagebox.showerror("Fehler", "Bitte gib ein gültiges Geburtsjahr ein.")
+            return
+
+        conn = sqlite3.connect('datenbank.db')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM user WHERE username = ?", (username,))
+        if cursor.fetchone():
+            messagebox.showerror("Fehler", "Der Benutzername ist bereits vergeben.")
+            conn.close()
+            return
+
+        cursor.execute("INSERT INTO user (username, password, jahr, land, geld, depotwert) VALUES (?, ?, ?, ?, ?, ?)",
+                       (username, password, geburtsjahr, "Unbekannt", 0.0, 0.0))
+        conn.commit()
+        conn.close()
+
+        messagebox.showinfo("Erfolg", f"Spieler '{username}' wurde erfolgreich erstellt!")
 
     spielstatus = True
 
@@ -145,6 +179,8 @@ def zeigeAnmelden(fenster_width, fenster_height, current_user=None):
                     if button["rect"].collidepoint(mouse_pos):
                         if button["label"] == "Anmelden":
                             authenticate_user()
+                        elif button["label"] == "Neuen Spieler erstellen":
+                            neuer_spieler_erstellen()
                         elif button["label"] == "Abmelden":
                             abmelden_user()
                         elif button["label"] == "Schließen":
