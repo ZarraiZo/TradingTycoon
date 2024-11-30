@@ -4,6 +4,7 @@ from datetime import datetime
 from anmelden import zeigeAnmelden
 from markt import zeigeMarkt
 from zeit import zeigeZeit
+from bestenliste import zeigeBestenliste
 import login
 
 pygame.init()
@@ -129,6 +130,8 @@ while spielstatus:
                         zeigeMarkt(fenster_width, fenster_height, current_user=login.get_active_user())
                     elif button["label"] == "Zeit":
                         zeigeZeit(fenster_width, fenster_height)
+                    elif button["label"] == "Bestenliste":
+                        zeigeBestenliste(fenster_width, fenster_height)
                     elif button["label"] == "Beenden":
                         spielstatus = False
 
