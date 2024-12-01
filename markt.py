@@ -44,12 +44,8 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
     background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
     def get_user_data(username):
-        """
-        Holt die Benutzerinformationen (Geld und Depotwert) aus der Datenbank.
-        """
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
-
         cursor.execute("SELECT geld, depotwert FROM user WHERE username = ?", (username,))
         result = cursor.fetchone()
         conn.close()
@@ -60,7 +56,6 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
             return {"geld": 0.0, "depotwert": 0.0}
 
     def get_time_from_db():
-        """Liest die Zeit aus der Tabelle 'zeit' in der Datenbank."""
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
         cursor.execute("SELECT datum, uhrzeit FROM zeit LIMIT 1")
@@ -73,38 +68,64 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
         else:
             return "01.01.2025 01:00"
 
-    def authenticate_user():
-        username = simpledialog.askstring("Anmelden", "Benutzername:")
-        password = simpledialog.askstring("Anmelden", "Passwort:", show='*')
-        
-        conn = sqlite3.connect('datenbank.db')
+    def depot_ansehen():
+        angemeldeter_user = login.get_active_user()
+        if not angemeldeter_user:
+            messagebox.showerror("Fehler", "Kein Benutzer ist angemeldet.")
+            return
+
+        conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user WHERE username=? AND password=?", (username, password))
-        user = cursor.fetchone()
+        cursor.execute("SELECT typ, name, menge, wert_pro_einheit FROM depot WHERE username = ?", (angemeldeter_user,))
+        depot = cursor.fetchall()
         conn.close()
 
-        if user:
-            login.set_active_user(username)
-            return username
-        else:
-            messagebox.showerror("Fehler", "Ungültiger Benutzername oder Passwort.")
-            return None
+        if not depot:
+            messagebox.showinfo("Depot", "Ihr Depot ist leer.")
+            return
 
-    def abmelden_user():
-        if login.get_active_user():
-            login.clear_active_user()
-            messagebox.showinfo("Abmeldung", "Benutzer wurde erfolgreich abgemeldet.")
-        else:
-            messagebox.showinfo("Abmeldung", "Kein Benutzer ist aktuell angemeldet.")
+        viewing = True
+        while viewing:
+            fenster.fill(black)
+            fenster.blit(background_image, (0, 0))
+
+            title_text = font.render(f"Depot von {angemeldeter_user}", True, green)
+            fenster.blit(title_text, (fenster_width // 2 - title_text.get_width() // 2, 50))
+
+            headers = ["Typ", "Name", "Menge", "Wert/Einheit (€)"]
+            row_height = 40
+            start_y = 150
+
+            for idx, header in enumerate(headers):
+                header_text = small_font.render(header, True, green)
+                fenster.blit(header_text, (50 + idx * 200, start_y))
+
+            for row_idx, row in enumerate(depot):
+                for col_idx, value in enumerate(row):
+                    cell_text = status_font.render(str(value), True, green)
+                    fenster.blit(cell_text, (50 + col_idx * 200, start_y + (row_idx + 1) * row_height))
+
+            back_button_rect = pygame.Rect(fenster_width // 2 - 100, fenster_height - 100, 200, 50)
+            pygame.draw.rect(fenster, turquoise, back_button_rect)
+            back_button_text = small_font.render("Zurück", True, black)
+            back_button_text_rect = back_button_text.get_rect(center=back_button_rect.center)
+            fenster.blit(back_button_text, back_button_text_rect)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_button_rect.collidepoint(pygame.mouse.get_pos()):
+                        viewing = False
+
+            pygame.display.update()
 
     def aktien_kaufen():
         messagebox.showinfo("Aktien kaufen", "Funktion zum Aktienkauf wird hier eingebaut.")
 
     def aktien_verkaufen():
         messagebox.showinfo("Aktien verkaufen", "Funktion zum Aktienverkauf wird hier eingebaut.")
-
-    def depot_ansehen():
-        messagebox.showinfo("Depot ansehen", "Funktion zum Ansehen des Depots wird hier eingebaut.")
 
     spielstatus = True
 
@@ -118,7 +139,6 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
         angemeldeter_user = login.get_active_user()
         if angemeldeter_user:
             benutzer_daten = get_user_data(angemeldeter_user)
-
             user_text = status_font.render(f"Angemeldet als: {angemeldeter_user}", True, green)
             geld_text = status_font.render(f"Geld: {benutzer_daten['geld']}€", True, green)
             depot_text = status_font.render(f"Depotwert: {benutzer_daten['depotwert']}€", True, green)
