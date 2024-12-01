@@ -167,14 +167,13 @@ def zeigeBestenliste(fenster_width, fenster_height):
         rect = buttons[0]["rect"]
         hover = rect.collidepoint(mouse_pos)
         
-        # Button-Design: Schwarz mit türkisen Rändern und bei Hover komplett Türkis
         if hover:
-            pygame.draw.rect(fenster, turquoise, rect, border_radius=20)  # Türkis bei Hover
-            button_text = small_font.render("Schließen", True, red)  # Rote Schrift bei Hover
+            pygame.draw.rect(fenster, turquoise, rect, border_radius=20)
+            button_text = small_font.render("Schließen", True, red)
         else:
-            pygame.draw.rect(fenster, button_color, rect, border_radius=20)  # Schwarz bei normalem Zustand
-            pygame.draw.rect(fenster, turquoise, rect, 5, border_radius=20)  # Türkis Rand
-            button_text = small_font.render("Schließen", True, green)  # Grüne Schrift bei normalem Zustand
+            pygame.draw.rect(fenster, button_color, rect, border_radius=20)
+            pygame.draw.rect(fenster, turquoise, rect, 5, border_radius=20)
+            button_text = small_font.render("Schließen", True, green)
 
         button_text_rect = button_text.get_rect(center=rect.center)
         fenster.blit(button_text, button_text_rect)

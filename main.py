@@ -5,6 +5,7 @@ from anmelden import zeigeAnmelden
 from markt import zeigeMarkt
 from zeit import zeigeZeit
 from bestenliste import zeigeBestenliste
+from anleihen import zeigeAnleihen
 import login
 
 pygame.init()
@@ -36,7 +37,7 @@ button_width = 250
 buttons = [
     {"label": "Anmelden", "rect": pygame.Rect(center_x - button_width // 2, center_y - 200, button_width, button_height)},
     {"label": "Markt", "rect": pygame.Rect(center_x - button_width // 2, center_y - 80, button_width, button_height)},
-    {"label": "Depot", "rect": pygame.Rect(center_x - button_width // 2, center_y + 40, button_width, button_height)},
+    {"label": "Anleihen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 40, button_width, button_height)},
     {"label": "Bestenliste", "rect": pygame.Rect(center_x - button_width // 2, center_y + 160, button_width, button_height)},
     {"label": "Zeit", "rect": pygame.Rect(center_x - button_width // 2, center_y + 280, button_width, button_height)},
     {"label": "Beenden", "rect": pygame.Rect(center_x - button_width // 2, center_y + 400, button_width, button_height)},
@@ -128,6 +129,8 @@ while spielstatus:
                         zeigeAnmelden(fenster_width, fenster_height)
                     elif button["label"] == "Markt":
                         zeigeMarkt(fenster_width, fenster_height, current_user=login.get_active_user())
+                    elif button["label"] == "Anleihen":
+                        zeigeAnleihen(fenster_width, fenster_height)
                     elif button["label"] == "Zeit":
                         zeigeZeit(fenster_width, fenster_height)
                     elif button["label"] == "Bestenliste":
