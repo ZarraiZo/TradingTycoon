@@ -20,7 +20,7 @@ def zeigeBestenliste(fenster_width, fenster_height):
     font = pygame.font.Font(None, 74)
     small_font = pygame.font.Font(None, 50)
     table_font = pygame.font.Font(None, 30)
-    status_font = pygame.font.Font(None, 25)
+    status_font = pygame.font.Font(None, 20)
 
     title_text = font.render("Bestenliste", True, green)
     center_x = fenster_width // 2
