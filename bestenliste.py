@@ -2,6 +2,7 @@
 from tkinter import messagebox
 import sqlite3
 from datetime import datetime
+import login
 
 def zeigeBestenliste(fenster_width, fenster_height):
     pygame.init()
@@ -14,7 +15,7 @@ def zeigeBestenliste(fenster_width, fenster_height):
     button_color = (0, 0, 0)
     red = (255, 0, 0)
     white = (255, 255, 255)
-    dark_black = (30, 30, 30)  # Dunkles Schwarz für die Hintergrundzellen
+    dark_black = (30, 30, 30)
 
     font = pygame.font.Font(None, 74)
     small_font = pygame.font.Font(None, 50)
@@ -33,32 +34,22 @@ def zeigeBestenliste(fenster_width, fenster_height):
         {"label": "Schließen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 350, button_width, button_height)},
     ]
 
-    def draw_rounded_button(surface, x, y, width, height, border_radius, border_color, center_color, border_thickness=2):
-        pygame.draw.rect(surface, border_color, (x, y, width, height), border_radius=border_radius)
-        pygame.draw.rect(surface, center_color,
-                         (x + border_thickness, y + border_thickness, width - 2 * border_thickness, height - 2 * border_thickness),
-                         border_radius=border_radius)
-
     background_image = pygame.image.load("Hintergrund/Bild4.jpg").convert()
     background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
-    def get_current_year_from_db():
-        """Holt das aktuelle Jahr aus der Tabelle 'zeit'."""
+    def get_current_datetime():
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT datum FROM zeit LIMIT 1")
+        cursor.execute("SELECT datum, uhrzeit FROM zeit LIMIT 1")
         result = cursor.fetchone()
         conn.close()
 
         if result:
-            datum = result[0]
-            return int(datum.split('.')[-1])  # Extrahiere das Jahr (z.B., '2025')
-        return datetime.now().year  # Fallback: aktuelles Systemjahr
+            datum, uhrzeit = result
+            return f"{datum} - {uhrzeit}"
+        return "Kein Datum verfügbar"
 
     def fetch_users(page, users_per_page):
-        """
-        Holt Benutzer aus der Datenbank und gibt sie in Seiten aufgeteilt zurück.
-        """
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
 
@@ -67,20 +58,29 @@ def zeigeBestenliste(fenster_width, fenster_height):
                        (users_per_page, offset))
         users = cursor.fetchall()
 
-        # Gesamtanzahl der Benutzer für Seitenzahl-Berechnung
         cursor.execute("SELECT COUNT(*) FROM user")
         total_users = cursor.fetchone()[0]
         conn.close()
-
         return users, total_users
 
     def calculate_age(birth_year, current_year):
-        """Berechnet das Alter eines Benutzers basierend auf dem Geburtsjahr."""
         return current_year - birth_year
 
+    def get_user_data(username):
+        conn = sqlite3.connect("datenbank.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT geld, depotwert FROM user WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        conn.close()
+
+        if result:
+            return {"geld": result[0], "depotwert": result[1]}
+        return {"geld": 0.0, "depotwert": 0.0}
+
+    current_year = datetime.now().year
+    angemeldeter_user = login.get_active_user()
     current_page = 1
     users_per_page = 10
-    current_year = get_current_year_from_db()
 
     spielstatus = True
 
@@ -91,92 +91,103 @@ def zeigeBestenliste(fenster_width, fenster_height):
 
         fenster.blit(title_text, title_rect)
 
-        # Daten abrufen
+        user_y_offset = center_y - 400
+        if angemeldeter_user:
+            benutzer_daten = get_user_data(angemeldeter_user)
+            geld = benutzer_daten['geld']
+            depotwert = benutzer_daten['depotwert']
+            gesamtwert = geld + depotwert
+
+            user_text = status_font.render(f"Angemeldet: {angemeldeter_user} | Geld: {geld}€ | Depotwert: {depotwert}€ | Gesamtwert: {gesamtwert}€", True, green)
+        else:
+            user_text = status_font.render("Kein Benutzer angemeldet", True, red)
+        fenster.blit(user_text, (center_x - user_text.get_width() // 2, user_y_offset))
+
         users, total_users = fetch_users(current_page, users_per_page)
         total_pages = (total_users + users_per_page - 1) // users_per_page
 
-        # Tabelle zeichnen
-        table_x = 100
+        table_x = 50
         table_y = 200
-        table_width = fenster_width - 200
-        table_height = 400
+        table_width = fenster_width - 100
+        table_height = 500
         row_height = 40
+
+        pygame.draw.rect(fenster, dark_black, (table_x, table_y, table_width, table_height))
 
         pygame.draw.rect(fenster, white, (table_x, table_y, table_width, table_height), width=2)
 
-        headers = ["Name", "Alter", "Land", "Gesamtwert (€)"]
-        col_widths = [table_width // len(headers)] * len(headers)
+        headers = ["Platz", "Name", "Alter", "Land", "Gesamtwert (€)"]
+        col_widths = [80, 300, 100, 150, 300]
 
-        # Header zeichnen
         for col_idx, header in enumerate(headers):
             header_text = table_font.render(header, True, green)
             header_x = table_x + sum(col_widths[:col_idx])
             header_rect = header_text.get_rect(center=(header_x + col_widths[col_idx] // 2, table_y + row_height // 2))
             fenster.blit(header_text, header_rect)
 
-        # Benutzer in die Tabelle einfügen
         for row_idx, user in enumerate(users):
             username, geburtsjahr, land, geld, depotwert = user
-            alter = calculate_age(geburtsjahr, current_year)  # Hier wird das Jahr verwendet
+            alter = calculate_age(geburtsjahr, current_year)
             gesamtwert = geld + depotwert
-            user_data = [username, alter, land, f"{gesamtwert:.2f}"]
+            platz = (current_page - 1) * users_per_page + row_idx + 1
+
+            user_data = [platz, username, alter, land, f"{gesamtwert:.2f}"]
 
             for col_idx, value in enumerate(user_data):
                 cell_x = table_x + sum(col_widths[:col_idx])
                 cell_y = table_y + row_height * (row_idx + 1.5)
 
-                # Halbtransparenter schwarzer Hintergrund für die Zelle
                 cell_surface = pygame.Surface((col_widths[col_idx], row_height))
-                cell_surface.set_alpha(180)  # Transparenz (0-255)
-                cell_surface.fill(dark_black)  # Dunkles Schwarz für den Hintergrund
+                cell_surface.fill(dark_black)
+                fenster.blit(cell_surface, (cell_x, cell_y))
 
-                fenster.blit(cell_surface, (cell_x, cell_y))  # Zelle einfügen
-
-                cell_text = table_font.render(str(value), True, turquoise)
+                cell_text = table_font.render(str(value), True, green if col_idx == 0 else turquoise)
                 cell_rect = cell_text.get_rect(center=(cell_x + col_widths[col_idx] // 2, cell_y + row_height // 2))
                 fenster.blit(cell_text, cell_rect)
 
-        # Seiteninformationen anzeigen
-        page_info = f"Seite {current_page} von {total_pages}"
-        page_text = status_font.render(page_info, True, green)
-        page_text_rect = page_text.get_rect(center=(fenster_width // 2, table_y + table_height + 40))
-        fenster.blit(page_text, page_text_rect)
-
-        # Schaltflächen zeichnen
-        for button in buttons:
-            rect = button["rect"]
-            hover = rect.collidepoint(mouse_pos)
-            center_color = turquoise if hover else button_color
-            text_color = red if hover else green
-
-            draw_rounded_button(fenster, rect.x, rect.y, button_width, button_height, 20, turquoise, center_color, border_thickness=3)
-            button_text = small_font.render(button["label"], True, text_color)
-            button_text_rect = button_text.get_rect(center=rect.center)
-            fenster.blit(button_text, button_text_rect)
-
-        # Navigation (vor/zurück)
+        nav_y = table_y + table_height + 20
         if current_page > 1:
             prev_text = small_font.render("< Vorherige", True, green)
-            prev_rect = prev_text.get_rect(center=(table_x + 100, table_y + table_height + 40))
+            prev_rect = prev_text.get_rect(center=(table_x + 100, nav_y))
             fenster.blit(prev_text, prev_rect)
+        else:
+            prev_rect = pygame.Rect(0, 0, 0, 0)
 
         if current_page < total_pages:
             next_text = small_font.render("Nächste >", True, green)
-            next_rect = next_text.get_rect(center=(table_x + table_width - 100, table_y + table_height + 40))
+            next_rect = next_text.get_rect(center=(table_x + table_width - 100, nav_y))
             fenster.blit(next_text, next_rect)
+        else:
+            next_rect = pygame.Rect(0, 0, 0, 0)
 
-        # Ereignisse abfangen
+        current_datetime = get_current_datetime()
+        datetime_text = status_font.render(current_datetime, True, green)
+        fenster.blit(datetime_text, (fenster_width - datetime_text.get_width() - 10, fenster_height - 30))
+
+        rect = buttons[0]["rect"]
+        hover = rect.collidepoint(mouse_pos)
+        
+        # Button-Design: Schwarz mit türkisen Rändern und bei Hover komplett Türkis
+        if hover:
+            pygame.draw.rect(fenster, turquoise, rect, border_radius=20)  # Türkis bei Hover
+            button_text = small_font.render("Schließen", True, red)  # Rote Schrift bei Hover
+        else:
+            pygame.draw.rect(fenster, button_color, rect, border_radius=20)  # Schwarz bei normalem Zustand
+            pygame.draw.rect(fenster, turquoise, rect, 5, border_radius=20)  # Türkis Rand
+            button_text = small_font.render("Schließen", True, green)  # Grüne Schrift bei normalem Zustand
+
+        button_text_rect = button_text.get_rect(center=rect.center)
+        fenster.blit(button_text, button_text_rect)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 spielstatus = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if current_page > 1 and prev_rect.collidepoint(mouse_pos):
+                if prev_rect.collidepoint(mouse_pos) and current_page > 1:
                     current_page -= 1
-                elif current_page < total_pages and next_rect.collidepoint(mouse_pos):
+                elif next_rect.collidepoint(mouse_pos) and current_page < total_pages:
                     current_page += 1
-                for button in buttons:
-                    if button["rect"].collidepoint(mouse_pos):
-                        if button["label"] == "Schließen":
-                            return None
+                elif rect.collidepoint(mouse_pos):
+                    return None
 
         pygame.display.update()
