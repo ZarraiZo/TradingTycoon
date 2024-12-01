@@ -2,6 +2,7 @@
 import sqlite3
 from datetime import datetime
 import login
+from tkinter import messagebox
 
 def zeigeAnleihen(fenster_width, fenster_height):
     pygame.init()
@@ -44,19 +45,55 @@ def zeigeAnleihen(fenster_width, fenster_height):
         return anleihen
 
     def kaufe_anleihe(anleihe_id):
+        angemeldeter_user = login.get_active_user()
+        if not angemeldeter_user:
+            messagebox.showerror("Fehler", "Kein Benutzer angemeldet. Bitte melden Sie sich an, um Anleihen zu kaufen.")
+            return
+
         betrag = 1000
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT wert FROM anleihen WHERE id = ?", (anleihe_id,))
-        result = cursor.fetchone()
-        if result and result[0] >= betrag:
-            neuer_wert = result[0] - betrag
+
+        try:
+            cursor.execute("SELECT userid, geld FROM user WHERE username = ?", (angemeldeter_user,))
+            result = cursor.fetchone()
+            if not result:
+                print("Fehler: Benutzer nicht gefunden.")
+                return
+            user_id, user_geld = result
+
+            cursor.execute("SELECT name, zinssatz, laufzeit, wert FROM anleihen WHERE id = ?", (anleihe_id,))
+            anleihe = cursor.fetchone()
+            if not anleihe:
+                print("Fehler: Anleihe nicht gefunden.")
+                return
+
+            name, zinssatz, laufzeit, wert = anleihe
+            if wert < betrag:
+                print("Nicht genügend Anleihen verfügbar!")
+                return
+
+            if user_geld < betrag:
+                print("Nicht genügend Geld auf dem Konto!")
+                return
+
+            neuer_wert = wert - betrag
             cursor.execute("UPDATE anleihen SET wert = ? WHERE id = ?", (neuer_wert, anleihe_id))
+
+            cursor.execute("""
+                INSERT INTO depot (user_id, typ, name, menge, wert_pro_einheit, laufzeit)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (user_id, "Anleihe", name, 1, betrag, laufzeit))
+
+            neues_geld = user_geld - betrag
+            cursor.execute("UPDATE user SET geld = ? WHERE userid = ?", (neues_geld, user_id))
+
             conn.commit()
-            print("Kauf erfolgreich!")
-        else:
-            print("Nicht genügend Anleihen verfügbar!")
-        conn.close()
+            print("Anleihe erfolgreich gekauft, ins Depot eingetragen und Geld abgezogen!")
+        except sqlite3.Error as e:
+            print(f"Fehler beim Kauf der Anleihe: {e}")
+        finally:
+            conn.close()
 
     spielstatus = True
 

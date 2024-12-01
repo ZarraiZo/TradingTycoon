@@ -76,9 +76,22 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
 
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT typ, name, menge, wert_pro_einheit FROM depot WHERE username = ?", (angemeldeter_user,))
-        depot = cursor.fetchall()
-        conn.close()
+
+        try:
+            cursor.execute("SELECT userid FROM user WHERE username = ?", (angemeldeter_user,))
+            result = cursor.fetchone()
+            if not result:
+                messagebox.showerror("Fehler", "Benutzer nicht gefunden.")
+                return
+            user_id = result[0]
+
+            cursor.execute("SELECT typ, name, menge, wert_pro_einheit, laufzeit FROM depot WHERE user_id = ?", (user_id,))
+            depot = cursor.fetchall()
+        except sqlite3.OperationalError as e:
+            messagebox.showerror("Datenbankfehler", f"Fehler: {e}")
+            return
+        finally:
+            conn.close()
 
         if not depot:
             messagebox.showinfo("Depot", "Ihr Depot ist leer.")
@@ -92,7 +105,7 @@ def zeigeMarkt(fenster_width, fenster_height, current_user=None):
             title_text = font.render(f"Depot von {angemeldeter_user}", True, green)
             fenster.blit(title_text, (fenster_width // 2 - title_text.get_width() // 2, 50))
 
-            headers = ["Typ", "Name", "Menge", "Wert/Einheit (€)"]
+            headers = ["Typ", "Name", "Menge", "Wert/Einheit (€)", "Laufzeit (Tage)"]
             row_height = 40
             start_y = 150
 

@@ -13,6 +13,32 @@ def draw_rounded_button(surface, x, y, width, height, border_radius, border_colo
                      (x + border_thickness, y + border_thickness, width - 2 * border_thickness, height - 2 * border_thickness),
                      border_radius=border_radius)
 
+def aktualisiere_depotwerte():
+    """Aktualisiert den Depotwert aller Benutzer in der Datenbank."""
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT userid FROM user")
+        benutzer = cursor.fetchall()
+
+        for (user_id,) in benutzer:
+            cursor.execute("""
+                SELECT SUM(menge * wert_pro_einheit)
+                FROM depot
+                WHERE user_id = ?
+            """, (user_id,))
+            depotwert = cursor.fetchone()[0] or 0
+
+            cursor.execute("UPDATE user SET depotwert = ? WHERE userid = ?", (depotwert, user_id))
+
+        conn.commit()
+        print("Depotwerte für alle Benutzer erfolgreich aktualisiert.")
+    except sqlite3.Error as e:
+        print(f"Fehler beim Aktualisieren der Depotwerte: {e}")
+    finally:
+        conn.close()
+
 def zeigeZeit(fenster_width, fenster_height, current_user=None):
     pygame.init()
     fenster = pygame.display.set_mode((fenster_width, fenster_height))
@@ -86,10 +112,12 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
         return {"geld": 0.0, "depotwert": 0.0}
 
     def update_time(delta):
-        """Aktualisiert die Zeit um einen bestimmten Zeitversatz."""
+        """Aktualisiert die Zeit um einen bestimmten Zeitversatz und aktualisiert Depotwerte."""
         nonlocal current_time
         current_time += delta
         save_time_to_db(current_time)
+
+        aktualisiere_depotwerte()
 
     def set_manual_time():
         """Ermöglicht die manuelle Eingabe einer neuen Zeit."""
@@ -99,6 +127,8 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
             new_time = datetime.strptime(new_time_str, "%d.%m.%Y %H:%M")
             current_time = new_time
             save_time_to_db(current_time)
+
+            aktualisiere_depotwerte()
         except (ValueError, TypeError):
             messagebox.showerror("Fehler", "Ungültiges Datum/Zeit-Format.")
 
