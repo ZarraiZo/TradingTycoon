@@ -1,9 +1,9 @@
 Fehlerliste - Was noch dazu kommen soll		Version: v00.13
 ----------------------------------------------------------------------------------------------------------------------------------
 
-+	Depot wurde eingefügt.
++	Depot
 	+ Geld wird abgezogen wenn man Anleihen kauft.
-	- Die Laufzeit verringert sich nicht wenn ein Tag rum geht.
+	+ Zinssatz von Anleihen und Geld zurück bekommen klappt jetzt auch
 	- Tabelle muss noch angepasst werden.
 
 -	Markt muss eingefügt werden
@@ -19,7 +19,10 @@ Fehlerliste - Was noch dazu kommen soll		Version: v00.13
 	- Datum und Zeit fehlen unten rechts.
 
 +	Wenn mein die Zeit verändert wird das Depot aktualisiert.
- 
--	In der Datenbank ist ein Fehler aufgetreten mit den Ids
+
++	Ändere gerade die Zeit der ganze Code geht nicht mehr.
+	- zeit.py ist verändert die andern müssen noch.
+	- main.py hab ich auch was ändert weiß aber noch nicht ob es reicht.
+		- hoffe hab jetzt nicht den ganzen Code auseinander genommen ^^
 
 ----------------------------------------------------------------------------------------------------------------------------------

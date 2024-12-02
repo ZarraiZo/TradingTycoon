@@ -66,18 +66,18 @@ def get_user_data(username):
         return {"geld": 0.0, "depotwert": 0.0}
 
 def get_time_from_db():
-    """Liest die Zeit aus der Tabelle 'zeit' in der Datenbank."""
+    """Liest das Datum aus der Tabelle 'zeit' in der Datenbank."""
     conn = sqlite3.connect("datenbank.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT datum, uhrzeit FROM zeit LIMIT 1")
+    cursor.execute("SELECT datum FROM zeit LIMIT 1")
     result = cursor.fetchone()
     conn.close()
 
     if result:
-        datum, uhrzeit = result
-        return f"{datum} {uhrzeit}"
+        datum = result[0]
+        return datum
     else:
-        return "01.01.2025 01:00"
+        return "01.01.2025"
 
 spielstatus = True
 

@@ -5,16 +5,12 @@ import sqlite3
 import login
 
 def draw_rounded_button(surface, x, y, width, height, border_radius, border_color, center_color, border_thickness=2):
-    """
-    Zeichnet einen Button mit abgerundeten Ecken.
-    """
     pygame.draw.rect(surface, border_color, (x, y, width, height), border_radius=border_radius)
     pygame.draw.rect(surface, center_color,
                      (x + border_thickness, y + border_thickness, width - 2 * border_thickness, height - 2 * border_thickness),
                      border_radius=border_radius)
 
 def aktualisiere_depotwerte():
-    """Aktualisiert den Depotwert aller Benutzer in der Datenbank."""
     conn = sqlite3.connect("datenbank.db")
     cursor = conn.cursor()
 
@@ -38,6 +34,87 @@ def aktualisiere_depotwerte():
         print(f"Fehler beim Aktualisieren der Depotwerte: {e}")
     finally:
         conn.close()
+
+def aktualisiere_anleihen_und_depot():
+    """
+    Reduziert die Laufzeiten der Anleihen und Depot-Einträge,
+    zahlt Zinsen und den Gesamtbetrag aus, und löscht abgelaufene Anleihen.
+    """
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("UPDATE anleihen SET laufzeit = laufzeit - 1 WHERE laufzeit > 0")
+        cursor.execute("UPDATE depot SET laufzeit = laufzeit - 1 WHERE laufzeit > 0")
+
+        cursor.execute("""
+            SELECT depot.user_id, depot.wert_pro_einheit, depot.menge, anleihen.zinssatz
+            FROM depot
+            JOIN anleihen ON depot.name = anleihen.name
+            WHERE depot.laufzeit = 1
+        """)
+        auszahlungen = cursor.fetchall()
+
+        for user_id, wert_pro_einheit, menge, zinssatz in auszahlungen:
+            zinsen = wert_pro_einheit * menge * (zinssatz / 100)
+            gesamtbetrag = wert_pro_einheit * menge
+            gesamtauszahlung = zinsen + gesamtbetrag
+
+            cursor.execute("UPDATE user SET geld = geld + ? WHERE userid = ?", (gesamtbetrag, user_id))
+            print(f"Auszahlung von {gesamtbetrag:.2f}€ (inkl. Zinsen) an User {user_id}.")
+
+        cursor.execute("DELETE FROM depot WHERE laufzeit <= 0")
+        cursor.execute("DELETE FROM anleihen WHERE laufzeit <= 0")
+
+        conn.commit()
+        print("Anleihen und Depoteinträge erfolgreich aktualisiert.")
+    except sqlite3.Error as e:
+        print(f"Fehler bei der Aktualisierung von Anleihen und Depot: {e}")
+    finally:
+        conn.close()
+
+def update_time(delta):
+    """
+    Aktualisiert die Zeit um einen bestimmten Zeitversatz.
+    Reduziert die Laufzeiten, zahlt Zinsen aus und entfernt abgelaufene Anleihen.
+    """
+    nonlocal current_time
+    previous_date = current_time.date()
+    new_time = current_time + delta
+    new_date = new_time.date()
+
+    if new_date > previous_date:
+        print("Ein neuer Tag beginnt, Laufzeiten werden angepasst...")
+        aktualisiere_anleihen_und_depot()
+
+    save_time_to_db(new_time)
+    aktualisiere_depotwerte()
+
+    current_time = new_time
+
+def get_current_time_from_db():
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT datum FROM zeit LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        datum = result[0]
+        return datetime.strptime(datum, "%d.%m.%Y")
+    else:
+        now = datetime(2025, 1, 1)
+        save_time_to_db(now)
+        return now
+
+def save_time_to_db(new_time):
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+    datum = new_time.strftime("%d.%m.%Y")
+    cursor.execute("DELETE FROM zeit")
+    cursor.execute("INSERT INTO zeit (datum) VALUES (?)", (datum,))
+    conn.commit()
+    conn.close()
 
 def zeigeZeit(fenster_width, fenster_height, current_user=None):
     pygame.init()
@@ -64,7 +141,7 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
     button_width = 300
 
     buttons = [
-        {"label": "Stunde", "rect": pygame.Rect(center_x - button_width // 2, center_y - 100, button_width, button_height)},
+        {"label": "Tag", "rect": pygame.Rect(center_x - button_width // 2, center_y - 100, button_width, button_height)},
         {"label": "Manuell", "rect": pygame.Rect(center_x - button_width // 2, center_y + 20, button_width, button_height)},
         {"label": "Schließen", "rect": pygame.Rect(center_x - button_width // 2, center_y + 140, button_width, button_height)},
     ]
@@ -72,35 +149,9 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
     background_image = pygame.image.load("Hintergrund/Bild7.jpg").convert()
     background_image = pygame.transform.scale(background_image, (fenster_width, fenster_height))
 
-    def get_current_time_from_db():
-        """Holt die aktuelle Zeit aus der Datenbank."""
-        conn = sqlite3.connect("datenbank.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT datum, uhrzeit FROM zeit LIMIT 1")
-        result = cursor.fetchone()
-        conn.close()
-
-        if result:
-            datum, uhrzeit = result
-            return datetime.strptime(f"{datum} {uhrzeit}", "%d.%m.%Y %H:%M")
-        else:
-            now = datetime(2025, 1, 1, 1, 0)
-            save_time_to_db(now)
-            return now
-
-    def save_time_to_db(new_time):
-        """Speichert die aktuelle Zeit in der Datenbank."""
-        conn = sqlite3.connect("datenbank.db")
-        cursor = conn.cursor()
-        datum = new_time.strftime("%d.%m.%Y")
-        uhrzeit = new_time.strftime("%H:%M")
-        cursor.execute("DELETE FROM zeit")
-        cursor.execute("INSERT INTO zeit (datum, uhrzeit) VALUES (?, ?)", (datum, uhrzeit))
-        conn.commit()
-        conn.close()
+    current_time = get_current_time_from_db()
 
     def get_user_data(username):
-        """Holt Geld und Depotwert des aktuellen Benutzers aus der Datenbank."""
         conn = sqlite3.connect("datenbank.db")
         cursor = conn.cursor()
         cursor.execute("SELECT geld, depotwert FROM user WHERE username = ?", (username,))
@@ -111,28 +162,18 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
             return {"geld": result[0], "depotwert": result[1]}
         return {"geld": 0.0, "depotwert": 0.0}
 
-    def update_time(delta):
-        """Aktualisiert die Zeit um einen bestimmten Zeitversatz und aktualisiert Depotwerte."""
-        nonlocal current_time
-        current_time += delta
-        save_time_to_db(current_time)
-
-        aktualisiere_depotwerte()
-
     def set_manual_time():
-        """Ermöglicht die manuelle Eingabe einer neuen Zeit."""
         nonlocal current_time
         try:
-            new_time_str = simpledialog.askstring("Zeit ändern", "Gib die neue Zeit im Format DD.MM.YYYY HH:MM ein:")
-            new_time = datetime.strptime(new_time_str, "%d.%m.%Y %H:%M")
+            new_time_str = simpledialog.askstring("Zeit ändern", "Gib die neue Zeit im Format DD.MM.YYYY ein:")
+            new_time = datetime.strptime(new_time_str, "%d.%m.%Y")
             current_time = new_time
             save_time_to_db(current_time)
 
+            aktualisiere_anleihen_und_depot()
             aktualisiere_depotwerte()
         except (ValueError, TypeError):
             messagebox.showerror("Fehler", "Ungültiges Datum/Zeit-Format.")
-
-    current_time = get_current_time_from_db()
 
     spielstatus = True
 
@@ -143,7 +184,7 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
 
         fenster.blit(title_text, title_rect)
 
-        time_text = font.render(current_time.strftime("%d.%m.%Y %H:%M"), True, green)
+        time_text = font.render(current_time.strftime("%d.%m.%Y"), True, green)
         time_rect = time_text.get_rect(center=(center_x, center_y - 250))
         fenster.blit(time_text, time_rect)
 
@@ -161,32 +202,27 @@ def zeigeZeit(fenster_width, fenster_height, current_user=None):
             user_text = status_font.render("Kein Benutzer angemeldet", True, red)
             fenster.blit(user_text, (center_x - user_text.get_width() // 2, center_y - 400))
 
-        bottom_right_text = small_time_font.render(current_time.strftime("%d.%m.%Y %H:%M"), True, green)
+        bottom_right_text = small_time_font.render(current_time.strftime("%d.%m.%Y"), True, green)
         bottom_right_pos = (fenster_width - bottom_right_text.get_width() - 10, fenster_height - bottom_right_text.get_height() - 10)
         fenster.blit(bottom_right_text, bottom_right_pos)
 
         for button in buttons:
-            rect = button["rect"]
-            hover = rect.collidepoint(mouse_pos)
-            center_color = turquoise if hover else button_color
-            text_color = red if hover else green
-
-            draw_rounded_button(fenster, rect.x, rect.y, button_width, button_height, 20, turquoise, center_color, border_thickness=3)
-            button_text = small_font.render(button["label"], True, text_color)
-            button_text_rect = button_text.get_rect(center=rect.center)
-            fenster.blit(button_text, button_text_rect)
+            draw_rounded_button(fenster, button["rect"].x, button["rect"].y, button_width, button_height, 15, green, button_color)
+            button_label = small_font.render(button["label"], True, green)
+            button_label_rect = button_label.get_rect(center=button["rect"].center)
+            fenster.blit(button_label, button_label_rect)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                spielstatus = False
+                pygame.quit()
+                quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                for button in buttons:
-                    if button["rect"].collidepoint(mouse_pos):
-                        if button["label"] == "Stunde":
-                            update_time(timedelta(hours=1))
-                        elif button["label"] == "Manuell":
-                            set_manual_time()
-                        elif button["label"] == "Schließen":
-                            return
+                if buttons[0]["rect"].collidepoint(mouse_pos):
+                    update_time(timedelta(days=1))
+                elif buttons[1]["rect"].collidepoint(mouse_pos):
+                    set_manual_time()
+                elif buttons[2]["rect"].collidepoint(mouse_pos):
+                    pygame.quit()
+                    quit()
 
         pygame.display.update()
